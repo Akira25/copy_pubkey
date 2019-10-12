@@ -1,0 +1,48 @@
+#!/bin/sh
+
+#This script saves your public key on the freifunk router. Thus you don't need to type the password anymore
+
+help_text () {
+echo "  This script do copy the public-keys of Freifunk-Fuerstenwalde developers onto your router.
+
+Usage: ./copy_pubkey <option>
+
+Options:
+  --marc:         copy Marc's public-key
+  --martin:       copy Martin's public-key
+  --me:           copy my personal public-key (~/.ssh/*.pub)
+  --all:          copy all puplic-key stored in ./pubkeys
+
+If you plan to copy many key at once, you should start with your own key:
+
+    ./copy_pubkey --me --all
+
+Thus you need to type the router password only once.
+"
+}
+
+if [ -z $1 ]; then
+  help_text
+  exit 1
+fi
+
+while [ -n "$1" ]; do
+  case "$1" in
+    --marc) ssh root@frei.funk "tee -a /etc/dropbear/authorized_keys" < "$PWD""/.pubkeys/marc.pub";;
+    --martin) ssh root@frei.funk "tee -a /etc/dropbear/authorized_keys" < "$PWD""/.pubkeys/martin.pub";;
+    --me)
+        #find public key of user
+        PUBKEY=$(find ~/.ssh/*.pub -type f)
+        ssh root@frei.funk "tee -a /etc/dropbear/authorized_keys" < "$PUBKEY"
+        ;;
+    --all)
+      LIST=$(find "$PWD/.pubkeys/" -type f)
+      for FILE in $LIST; do
+        ssh root@frei.funk "tee -a /etc/dropbear/authorized_keys" < "$FILE"
+      done
+      ;;
+    *|-h|--help) help_text
+     break;;
+  esac
+  shift;
+done
